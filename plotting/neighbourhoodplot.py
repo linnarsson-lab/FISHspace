@@ -122,6 +122,48 @@ def neighborhood_enrichment(
 	if save:
 		plt.savefig(savepath, dpi=300, transparent=True, bbox_inches='tight')
 	plt.show()
+	
+def neighborhood_enrichment_from_pandas(
+	df,
+	figsize=(5,5),
+	palette=None,
+	save=False,
+	savepath=None,
+
+	):
+
+	fig, ax = plt.subplots(ncols=1, nrows=1, figsize=figsize)
+
+
+	metric = 'euclidean'
+	method = 'ward'
+	D = pdist(df.values.T, metric=metric)
+	
+	# replace nans with 0 
+	D[np.isnan(D)] = 0
+	Z = fastcluster.linkage(D, method=method,metric=metric, preserve_input=True)
+	Z = hc.optimal_leaf_ordering(Z, D, metric=metric)
+	ordering_a = df.index[hc.leaves_list(Z)]
+	df = df.loc[ordering_a][ordering_a]
+
+	# Getting the Upper Triangle of the co-relation matrix
+	matrix = np.triu(df,k=1)
+	# using the upper triangle matrix as mask 
+	sns.heatmap(df, mask=matrix, cmap='coolwarm', center=0, ax=ax)
+	ax.tick_params(axis='both', which='major', pad=10, length=0) 
+	wh = 0.03/10* figsize[0]
+	for i, color in enumerate([mcolors.to_rgb(palette[i]) for i in ordering_a]):
+		ax.add_patch(plt.Rectangle(xy=(-wh, i), width=wh, height=1, color=color, lw=0,
+								transform=ax.get_yaxis_transform(), clip_on=False))
+
+	for i, color in enumerate([mcolors.to_rgb(palette[i]) for i in ordering_a]):
+		ax.add_patch(plt.Rectangle(xy=(i, -wh), height=wh, width=1, color=color, lw=0,
+								transform=ax.get_xaxis_transform(), clip_on=False))
+
+	plt.tight_layout()
+	if save:
+		plt.savefig(savepath, dpi=300, transparent=True, bbox_inches='tight')
+	plt.show()
 
 
 def co_ocurrance(
