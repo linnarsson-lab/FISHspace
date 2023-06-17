@@ -11,7 +11,6 @@ from typing import Tuple  # Classes
 
 from anndata import AnnData
 import warnings
-
 from FISHspace.plotting.classes import ClusterPlot
 from FISHspace.plotting.classes_bokeh import BokehClusterPlot
 from FISHspace.plotting._docs import doc_spatial_base_plot, doc_cluster_plot
