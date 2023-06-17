@@ -8,16 +8,8 @@ from matplotlib_scalebar.scalebar import ScaleBar
 import logging
 import os
 import matplotlib.colors as mcolors
-from tqdm import tqdm, trange
 from matplotlib import rcParams
-import seaborn as sns
 from matplotlib import colors as mcolors
-import scipy.cluster.hierarchy as hc
-from scipy.spatial.distance import pdist
-from sklearn.preprocessing import scale
-from scipy.cluster.hierarchy import dendrogram
-import fastcluster
-from sklearn.preprocessing import StandardScaler
 import random
 
 logging.basicConfig(level=logging.INFO)

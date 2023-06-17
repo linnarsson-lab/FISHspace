@@ -9,15 +9,10 @@ import logging
 import os
 import matplotlib.colors as mcolors
 from tqdm import tqdm, trange
-from FISHspace.color_utils.scatter import scatterc, scattern, scatterm
+from FISHspace.color_utils.scatter import scattern
 from matplotlib import rcParams
 import seaborn as sns
 from matplotlib import colors as mcolors
-import scipy.cluster.hierarchy as hc
-from scipy.spatial.distance import pdist
-from sklearn.preprocessing import scale
-from scipy.cluster.hierarchy import dendrogram
-import fastcluster
 from sklearn.preprocessing import StandardScaler
 import random
 
@@ -97,6 +92,59 @@ def umap(
 		dpi=150,
 		**kwargs
 	):
+	nrows = int(np.ceil(len(color)/ncols))
+	xy = adata.obsm['X_umap']
+	
+	fig, axs = plt.subplots(figsize=figsize, nrows=nrows, ncols=ncols)
+	if nrows == 1 and ncols == 1:
+		axs = [axs]
+	else:
+		axs = axs.ravel()
+	grey = '#ececec'
+	for c, ax in zip(color, axs):
+		# remove ax ticks
+		ax.set_xticks([])
+		ax.set_yticks([])
+		ax.set_title(c)
+		if type(c) == str:
+			c = [c]
+		exp = adata[:,c].X.sum(axis=1)
+		if log:
+			exp = np.log(exp+1)
+			bgval = np.log(bgval+1)
+
+		scattern(xy, ax=ax, c=exp.flatten(), bgval=bgval, max_percentile=max_percentile, g=g, cmap=cmap)
+		if show_axis==False:
+			ax.axis('off')
+
+
+	plt.tight_layout()
+	if save:
+		plt.savefig(savepath,dpi=dpi, transparent=True,bbox_inches='tight')
+	plt.show()
+
+
+def umap2(
+		adata,
+		color: list=[],
+		palette=None,
+		cmap='magma',
+		figsize=(5,5),
+		ncols=1,
+		bgval=1,
+		max_percentile=98,
+		log=False,
+		g=None,
+		use_layer=None,
+		show_axis:bool=False,
+		save:bool=False,
+		savepath=None,
+		dpi=150,
+		**kwargs
+	):
+
+
+	
 	nrows = int(np.ceil(len(color)/ncols))
 	xy = adata.obsm['X_umap']
 	

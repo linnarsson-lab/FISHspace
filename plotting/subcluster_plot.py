@@ -1,20 +1,11 @@
 from matplotlib import pyplot as plt
-from PIL import Image
-import pandas as pd
-import matplotlib
-import numpy as np
-
 from typing import Optional, Union, Mapping  # Special
 from typing import Sequence, Iterable  # ABCs
 from typing import Tuple  # Classes
-
 from anndata import AnnData
-import warnings
-
 from FISHspace.plotting.classes import SubClusterPlot
 from FISHspace.plotting._docs import doc_spatial_base_plot, doc_subcluster_plot
 from FISHspace.utils import _AxesSubplot, Axes, _docs_params
-
 
 @_docs_params(
     spatial_base_plot=doc_spatial_base_plot, subcluster_plot=doc_subcluster_plot
