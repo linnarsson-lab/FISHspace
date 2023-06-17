@@ -74,7 +74,7 @@ palette= [
     mcolors.CSS4_COLORS['tomato'], 
 ]
 
-def umap(
+'''def umap(
 		adata,
 		color: list=[],
 		palette=None,
@@ -121,30 +121,27 @@ def umap(
 	plt.tight_layout()
 	if save:
 		plt.savefig(savepath,dpi=dpi, transparent=True,bbox_inches='tight')
-	plt.show()
+	plt.show()'''
 
 
-def umap2(
+def gene_umap(
 		adata,
 		color: list=[],
-		palette=None,
 		cmap='magma',
 		figsize=(5,5),
 		ncols=1,
-		bgval=1,
-		max_percentile=98,
+		bgval=0,
+		s=1,
 		log=False,
-		g=None,
-		use_layer=None,
 		show_axis:bool=False,
 		save:bool=False,
 		savepath=None,
+		alpha=1,
+		alpha_grey=0.5,
 		dpi=150,
 		**kwargs
 	):
 
-
-	
 	nrows = int(np.ceil(len(color)/ncols))
 	xy = adata.obsm['X_umap']
 	
@@ -153,7 +150,7 @@ def umap2(
 		axs = [axs]
 	else:
 		axs = axs.ravel()
-	grey = '#ececec'
+
 	for c, ax in zip(color, axs):
 		# remove ax ticks
 		ax.set_xticks([])
@@ -166,10 +163,18 @@ def umap2(
 			exp = np.log(exp+1)
 			bgval = np.log(bgval+1)
 
-		scattern(xy, ax=ax, c=exp.flatten(), bgval=bgval, max_percentile=max_percentile, g=g, cmap=cmap)
+		ordering = np.random.permutation(xy.shape[0])
+		color = exp[ordering]
+		xy_ = xy[ordering, :]
+		if bgval is not None:
+			cells = color > bgval
+			ax.scatter(xy_[:, 0], xy_[:, 1], c="lightgrey", s=s, cmap=cmap, alpha=alpha_grey, **kwargs)
+			ax.scatter(xy_[cells, 0], xy_[cells, 1], c=color[cells], s=s, cmap=cmap, alpha=alpha,**kwargs)
+		else:
+			ax.scatter(xy_[:, 0], xy_[:, 1], c=color, s=s, cmap=cmap, **kwargs)
+
 		if show_axis==False:
 			ax.axis('off')
-
 
 	plt.tight_layout()
 	if save:

@@ -8,8 +8,7 @@ def preprocess(
     normalize_mode='l2', #Choose between 'total'/'scanpy'/'l1 or 'l2', None
     log=True,
     batch_correction=True,
-    scanpy_scale=False,
-    minmax_scale=True,
+    scaling=False, # False, 'minmax', 'scanpy' 
     keep_raw=True,
     target_sum=1e3,
     ):
@@ -28,7 +27,7 @@ def preprocess(
     if log:
         sc.pp.log1p(adata)
     
-    if batch_correction and minmax_scale:    
+    if batch_correction and scaling:    
         logging.info('Batch correction mode on. This will force minmax scaling per sample to  remove batch effects.')
         adatas = []
         for s in np.unique(adata.obs.Sample):
@@ -37,8 +36,8 @@ def preprocess(
             adatas.append(ad)
         adata = adata[0].concatenate(*adatas[1:])
 
-    elif batch_correction == False and minmax_scale:
+    elif batch_correction == False and scaling == 'minmax':
         adata.X = MinMaxScaler().fit_transform(adata.X)
 
-    elif batch_correction == False and minmax_scale == False and scanpy_scale:
+    elif batch_correction == False and scaling == 'scanpy':
         sc.pp.scale(adata)
