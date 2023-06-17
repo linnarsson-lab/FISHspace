@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import cellrank as cr
 from FISHspace.tools.utils.cellrank_utils import _correlation_test
-from FISHspace.pp import scale
+from FISHspace.pp import preprocess
 from cellrank.pl._utils import (
     _fit_bulk,
     _get_backend,
