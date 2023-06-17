@@ -1,2 +1,2 @@
 from .preprocessing.graph import *
-from .preprocessing.minmax import *
+from .preprocessing.normalize_scale import *

@@ -23,7 +23,8 @@ def pseudotime_genes(
     latent_time_key = 'latent_time',
     n_bins=4,
     min_pval=0.005,
-    min_logfold=0.1
+    min_logfold=0.1,
+    highlight_genes=[],
 
     ):
     adata.obs['latent_time']
@@ -93,27 +94,45 @@ def pseudotime_genes(
     bins=n_bins
     gene_in_order = []
     for i in np.arange(bins):
-        print('bin',i,)
-        b00l_0 = rank_result[f'{i}_pvals_adj']<min_pval
-        print(b00l_0.sum(),'pval')
-        b00l_1 = rank_result[f'{i}_logfoldchanges']>min_logfold
-        print(b00l_1.sum(), 'lofgold')
-        b00l = b00l_0 & b00l_1
-        print(b00l.sum(),'left genes')
-        rank_result_thres = rank_result.loc[b00l,:]
 
+        total_genes= 1000
+        min_logfold_ = min_logfold
+        counter = 0
+        print('bin',i,)
+        while total_genes > 75:
+            #print('bin',i,)
+            b00l_0 = rank_result[f'{i}_pvals_adj']<min_pval
+            #print(b00l_0.sum(),'pval')
+
+            b00l_1 = rank_result[f'{i}_logfoldchanges']>min_logfold_
+            bool_names = rank_result[f'{i}_names'].isin(highlight_genes) & rank_result[f'{i}_logfoldchanges']>min_logfold
+            b00l = b00l_1 | bool_names
+            #print(b00l_1.sum(), 'lofgold')
+            b00l = b00l_0 & b00l_1
+            #print(b00l.sum(),'left genes')
+            rank_result_thres = rank_result.loc[b00l,:]
+            min_logfold_ += 0.2
+            total_genes = rank_result_thres.shape[0]
+            counter += 1
+            if counter > 100:  
+                break
         if rank_result_thres.shape[0]>50:
             if i == (bins-1):
                 print(i)
+                print(rank_result_thres)
                 print(rank_result_thres[f'{i}_logfoldchanges'])
                 thres = np.percentile(rank_result_thres[f'{i}_logfoldchanges'].values,50)
-                b00l = rank_result_thres[f'{i}_logfoldchanges'].values>thres
+                b00l = rank_result_thres[f'{i}_logfoldchanges'].values > thres
+                bool_names = rank_result_thres[f'{i}_names'].isin(highlight_genes)
+                b00l = b00l | bool_names
 
                 rank_result_thres = rank_result_thres.loc[b00l,:]
         else:
             if i == (bins-1):
                 thres = np.percentile(rank_result_thres[f'{i}_logfoldchanges'].values,50)
                 b00l = rank_result_thres[f'{i}_logfoldchanges'].values>thres
+                bool_names = rank_result_thres[f'{i}_names'].isin(highlight_genes)
+                b00l = b00l | bool_names
 
                 rank_result_thres = rank_result_thres.loc[b00l,:]
 
