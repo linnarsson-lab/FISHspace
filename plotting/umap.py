@@ -168,7 +168,7 @@ def gene_umap(
 		xy_ = xy[ordering, :]
 		if bgval is not None:
 			cells = color > bgval
-			ax.scatter(xy_[:, 0], xy_[:, 1], c="lightgrey", s=s, cmap=cmap, alpha=alpha_grey, **kwargs)
+			ax.scatter(xy_[:, 0], xy_[:, 1], c="lightgrey", s=s/10, cmap=cmap, alpha=alpha_grey, **kwargs)
 			ax.scatter(xy_[cells, 0], xy_[cells, 1], c=color[cells], s=s, cmap=cmap, alpha=alpha,**kwargs)
 		else:
 			ax.scatter(xy_[:, 0], xy_[:, 1], c=color, s=s, cmap=cmap, **kwargs)
