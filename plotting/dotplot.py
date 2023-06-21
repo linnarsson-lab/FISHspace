@@ -206,7 +206,6 @@ def dotplot_bgval(
     markers,
     cluster_key='CombinedNameMerge',
     cmap='Blues',
-    threshold = 0,
     size_factor=10,
     metric='correlation',
     method='ward',
@@ -250,8 +249,8 @@ def dotplot_bgval(
         #X = adata[adata.obs[cluster_key] == ad,markers].X.sum(axis=0)
         adata_c = adata[adata.obs[cluster_key] == ad,:]
         X = [adata_c[adata_c[:,m].X > bgval,m].X.sum(axis=0).toarray().tolist()[0]  for m in markers ]
-        totals =  [adata_c.shape[0] for m in markers ]
-        X = [x/t for x,t in zip(X,totals)]
+        tot =  [adata_c.shape[0] for m in markers ]
+        X = [x/t for x,t in zip(X,tot)]
 
         total_Cells.append(adata_c.shape[0])
         S = (adata_c.X > bgval).sum(axis=0)
