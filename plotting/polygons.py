@@ -241,11 +241,12 @@ def plot_polygon_expression(
 	im_gray = gdf[gdf['Expression'] <= bgval ].plot(color=gray_color,edgecolor='black',linewidth=0.05,ax=ax1,rasterized=True,facecolor=facecolor, alpha=0.25)
 	gdf_col = gdf[gdf['Expression'] > bgval ]
 	last = bgval
-	for e in np.unique(expression):
-		gdf_ = gdf_[(gdf_col['Expression']  <= e) & (gdf_col['Expression'] > bgval)]
-		im = gdf_.plot(color= gdf_['Expression'], cmap=cmap, edgecolor='black',linewidth=0.05,ax=ax1,rasterized=True,facecolor=facecolor,alpha=alpha)
-		last = e
-		
+	#for e in np.unique(expression):
+	#	gdf_ = gdf_[(gdf_col['Expression']  <= e) & (gdf_col['Expression'] > bgval)]
+	#	im = gdf_.plot(color= gdf_['Expression'], cmap=cmap, edgecolor='black',linewidth=0.05,ax=ax1,rasterized=True,facecolor=facecolor,alpha=alpha)
+	#	last = e
+	im = gdf_col.plot(color= gdf_col['Expression'], cmap=cmap, edgecolor='black',linewidth=0.05,ax=ax1,rasterized=True,facecolor=facecolor,alpha=alpha)
+
 	if show_scalebar:
 		scalebar = ScaleBar(
 			scale_factor,
