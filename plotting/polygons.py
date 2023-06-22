@@ -240,6 +240,9 @@ def plot_polygon_expression(
 
 	im_gray = gdf[gdf['Expression'] <= bgval ].plot(color=gray_color,edgecolor='black',linewidth=0.05,ax=ax1,rasterized=True,facecolor=facecolor, alpha=0.25)
 	gdf_col = gdf[gdf['Expression'] > bgval ]
+
+	order = np.argsort(gdf_col['Expression'])
+	gdf_col = gdf_col.iloc[order]
 	last = bgval
 	#for e in np.unique(expression):
 	#	gdf_ = gdf_[(gdf_col['Expression']  <= e) & (gdf_col['Expression'] > bgval)]
