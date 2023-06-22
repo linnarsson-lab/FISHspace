@@ -164,12 +164,13 @@ def plot_polygons(
 		plt.show()
 
 
-def plot_polygon_expression(
+def plot_polygons_expression(
 		adata:sc.AnnData,
 		sample:str,
 		genes:list,
 		cmap = 'magma',
 		bgval = 0, # background value for plotting expression
+		mquant = 0.99, # max quantile for plotting expression
 		palette:dict=None,
 		geometry_key:str = 'Polygons',
 		xlim:tuple = None, #= (11000, 13000)
@@ -199,6 +200,7 @@ def plot_polygon_expression(
 	adata = adata[adata.obs['Sample'] == sample]
 	adata = adata[(adata.obs['Area'] > area_min_size), :]
 	expression = adata[:,genes].X.mean(axis=1).toarray()
+	expression = np.clip(expression, bgval, np.quantile(expression, mquant))
 	logging.info('First filter, {} cells left'.format(adata.shape[0]))
 
 	polygons = adata.obs[geometry_key]
@@ -244,11 +246,7 @@ def plot_polygon_expression(
 	order = np.argsort(gdf_col['Expression'])
 	gdf_col = gdf_col.iloc[order]
 	last = bgval
-	#for e in np.unique(expression):
-	#	gdf_ = gdf_[(gdf_col['Expression']  <= e) & (gdf_col['Expression'] > bgval)]
-	#	im = gdf_.plot(color= gdf_['Expression'], cmap=cmap, edgecolor='black',linewidth=0.05,ax=ax1,rasterized=True,facecolor=facecolor,alpha=alpha)
-	#	last = e
-	im = gdf_col.plot(color= gdf_col['Expression'], cmap=cmap, edgecolor='black',linewidth=0.05,ax=ax1,rasterized=True,facecolor=facecolor,alpha=alpha)
+	im = gdf_col.plot(column='Expression', cmap=cmap, edgecolor='black',linewidth=0.05,ax=ax1,rasterized=True,facecolor=facecolor,alpha=alpha)
 
 	if show_scalebar:
 		scalebar = ScaleBar(

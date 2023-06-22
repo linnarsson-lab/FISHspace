@@ -277,17 +277,23 @@ def dotplot_bgval(
     df_sizes = pd.DataFrame(data=S*size_factor, index=np.unique(adata.obs[cluster_key]), columns=markers)
     
     if totals == False:
-        D = pdist(df.values, metric=metric)
-        Z = fastcluster.linkage(D, method=method,metric=metric, preserve_input=True)
-        Z = hc.optimal_leaf_ordering(Z, D, metric=metric)
-        ordering_samples = hc.leaves_list(Z)
-        ordering_samples_str_rows = df.index[ordering_samples]
+        try:
+            D = pdist(df.values, metric=metric)
+            Z = fastcluster.linkage(D, method=method,metric=metric, preserve_input=True)
+            Z = hc.optimal_leaf_ordering(Z, D, metric=metric)
+            ordering_samples = hc.leaves_list(Z)
+            ordering_samples_str_rows = df.index[ordering_samples]
+        except:
+            ordering_samples_str_rows = df.index
 
-        D = pdist(df.values.T, metric=metric)
-        Z = fastcluster.linkage(D, method=method,metric=metric, preserve_input=True)
-        Z = hc.optimal_leaf_ordering(Z, D, metric=metric)
-        ordering_samples = hc.leaves_list(Z)
-        ordering_samples_str_columns = df.columns[ordering_samples]
+        try:
+            D = pdist(df.values.T, metric=metric)
+            Z = fastcluster.linkage(D, method=method,metric=metric, preserve_input=True)
+            Z = hc.optimal_leaf_ordering(Z, D, metric=metric)
+            ordering_samples = hc.leaves_list(Z)
+            ordering_samples_str_columns = df.columns[ordering_samples]
+        except:
+            ordering_samples_str_columns = df.columns
 	
     
     if reverse_cols:
