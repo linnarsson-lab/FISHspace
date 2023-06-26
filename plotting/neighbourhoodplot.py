@@ -171,11 +171,21 @@ def neighborhood_enrichment_from_pandas(
 		ax.add_patch(plt.Rectangle(xy=(i, -wh), height=wh, width=1, color=color, lw=0,
 								transform=ax.get_xaxis_transform(), clip_on=False))
 		
-	ax.plot([1, N+1, 0, 0], [0, N, N, 0], clip_on=False, color='black', lw=2)
-	plt.subplots_adjust(top=.88)
+	ax.plot(
+		[0, 1, N-0, N+0, 0, 0], 
+		[0, 0, N-1, N+0, N, 0,], 
+		clip_on=False, 
+		color='black', 
+		lw=2)
+	ax.set_xlim(0, N)
+	ax.set_ylim(N, 0)
+
+	
+	plt.subplots_adjust(left=0.1, right=0.9, top=0.9, bottom=0.1)
 	plt.tight_layout()
+
 	if save:
-		plt.savefig(savepath, dpi=300, transparent=True,)
+		plt.savefig(savepath, dpi=300, transparent=True,bbox_inches='tight')
 	plt.show()
 
 
