@@ -137,11 +137,17 @@ def gene_umap(
 		save:bool=False,
 		savepath=None,
 		alpha=1,
+		co_expression=False,
 		alpha_grey=0.5,
 		dpi=150,
 		**kwargs
 	):
 
+	try:
+		adata = adata.copy()
+		adata.X = adata.raw[:,adata.var_names].X
+	except:
+		pass
 	nrows = int(np.ceil(len(color)/ncols))
 	xy = adata.obsm['X_umap']
 	
@@ -168,8 +174,16 @@ def gene_umap(
 		xy_ = xy[ordering, :]
 		if bgval is not None:
 			cells = color > bgval
-			ax.scatter(xy_[:, 0], xy_[:, 1], c="lightgrey", s=s/10, cmap=cmap, alpha=alpha_grey, **kwargs)
-			ax.scatter(xy_[cells, 0], xy_[cells, 1], c=color[cells], s=s, cmap=cmap, alpha=alpha,**kwargs)
+			if co_expression:
+				exp2 = adata[:,c].X
+				exp2 = exp2[ordering, :]
+				co_exp = (exp2 > 0).sum(axis=1).flatten() >= len(c)
+				print('coExp',co_exp.sum())
+				
+				cells = cells & co_exp
+				print(cells.sum())
+			ax.scatter(xy_[:, 0], xy_[:, 1], c="lightgrey", s=s/10, cmap=cmap, alpha=alpha_grey, rasterized=True, **kwargs)
+			ax.scatter(xy_[cells, 0], xy_[cells, 1], c=color[cells], s=s, cmap=cmap, alpha=alpha, rasterized=True, **kwargs)
 		else:
 			ax.scatter(xy_[:, 0], xy_[:, 1], c=color, s=s, cmap=cmap, **kwargs)
 

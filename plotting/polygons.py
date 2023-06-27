@@ -55,6 +55,8 @@ def plot_polygons(
 		image:np.array=None,
 		flipy:bool=False,
 		flipx:bool=False,
+		markersize=1,
+		linewidth=0.05,
 		annotation_rotation:int=0,
 		annotation_text_offset:tuple=(-50,0),
 		ax=None,
@@ -67,6 +69,7 @@ def plot_polygons(
 	logging.info('First filter, {} cells left'.format(adata.shape[0]))
 
 	polygons = adata.obs[geometry_key]
+	ispoint = polygons.values[0].count('POINT')
 	
 	gray_color = '#ececec'
 	geometry = gpd.GeoSeries.from_wkt(polygons)
@@ -104,11 +107,42 @@ def plot_polygons(
 			image = np.fliplr(image)
 		ax1.imshow(image[ylim[0]:ylim[1], xlim[0]:xlim[1]])
 
-	im_gray = gdf[gdf[cluster_key].isin(grey_clusters)].plot(color=gray_color,edgecolor='black',linewidth=0.05,ax=ax1,rasterized=True,facecolor=facecolor, alpha=0.25)
+	if ispoint:
+		_ = gdf[gdf[cluster_key].isin(grey_clusters)].plot(
+			color=gray_color,
+			markersize=markersize, 
+			edgecolor='black',
+			linewidth=linewidth,
+			ax=ax1,
+			rasterized=True,
+			facecolor=facecolor, 
+			alpha=0.25
+			)
+	else:
+		_ = gdf[gdf[cluster_key].isin(grey_clusters)].plot(
+			color=gray_color,
+			edgecolor='black',
+			linewidth=linewidth,
+			ax=ax1,
+			rasterized=True,
+			facecolor=facecolor, 
+			alpha=0.25
+			)
+		
 	for c in clusters:
 		gdf_ = gdf_col[gdf_col[cluster_key] == c]
-		im = gdf_.plot(color= gdf_['color'], edgecolor='black',linewidth=0.05,ax=ax1,rasterized=True,facecolor=facecolor,alpha=alpha)
-
+		if ispoint:
+			im = gdf_.plot(
+				color= palette[c], 
+				markersize=markersize, 
+				#edgecolor='black',
+				facecolor=palette[c],
+				linewidth=linewidth,
+				ax=ax1,
+				rasterized=True,
+				alpha=alpha)
+		else:
+			im = gdf_.plot(color= palette[c], edgecolor='black',linewidth=linewidth, ax=ax1,rasterized=True,facecolor=facecolor,alpha=alpha)
 	ax1.set_rasterization_zorder(0)
 	if annotate:
 		ann = gdf_col[(gdf_col.Area > 200) & (gdf_col.Area <= 1000)]
