@@ -174,7 +174,7 @@ def plot_cell_communication(
     if normalize_v:
         V = V / np.quantile(np.linalg.norm(V, axis=1), normalize_v_quantile)
     
-    plot_cell_signaling(
+    V = plot_cell_signaling(
         adata.obsm["spatial"][:,pos_idx],
         V,
         signal_sum,
@@ -201,7 +201,7 @@ def plot_cell_communication(
         ax = ax,
         # fig = fig,
     )
-    return ax
+    return ax, V
 
 def plot_cell_signaling(X,
     V,
@@ -333,3 +333,4 @@ def plot_cell_signaling(X,
     ax.axis("off")
     if not filename is None:
         plt.savefig(filename, dpi=500, bbox_inches = 'tight', transparent=True)
+    return V
