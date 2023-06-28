@@ -21,23 +21,23 @@ def vector_field(
     copy:bool=False,
     ):
 
-    adata = adata[adata.obs.Sample == sample]
+    adata_s = adata[adata.obs.Sample == sample]
 
     if clusters is not None:
-        adata = adata[adata.obs[cluster_key].isin(clusters)]
+        adata_s = adata_s[adata_s.obs[cluster_key].isin(clusters)]
 
-    sq.gr.spatial_neighbors(adata, coord_type="generic", n_neighs=10,delaunay=True,radius=(2.5,50))
-    sq.gr.nhood_enrichment(adata, cluster_key=cluster_key)
+    sq.gr.spatial_neighbors(adata_s, coord_type="generic", n_neighs=10,delaunay=True,radius=(2.5,50))
+    sq.gr.nhood_enrichment(adata_s, cluster_key=cluster_key)
 
     NN_score = pd.DataFrame(
-        data=adata.uns[f'{cluster_key}_nhood_enrichment']['zscore'], 
-        index=adata.obs[cluster_key].cat.categories, 
-        columns=adata.obs[cluster_key].cat.categories,
+        data=adata_s.uns[f'{cluster_key}_nhood_enrichment']['zscore'], 
+        index=adata_s.obs[cluster_key].cat.categories, 
+        columns=adata_s.obs[cluster_key].cat.categories,
         )
-    xy = adata.obsm['spatial']
+    xy = adata_s.obsm['spatial']
     x = xy[:,0]
     y = xy[:,1]
-    c = adata.obs[cluster_key]
+    c = adata_s.obs[cluster_key]
 
     df , coords = _hexbin_make(x, y, c,spacing = spacing, min_count=min_count, n_jobs=-1)
     tree = KDTree(coords)
@@ -67,11 +67,11 @@ def vector_field(
 
     vector_field = np.array(vector_field)
     #vector_field = normalize(vector_field) * spacing
-    adata.obsm['vector_field'] = vector_field
-    adata.obsm['vector_field_coords'] = coords
+    adata_s.uns['vector_field_delta'] = vector_field
+    adata_s.uns['vector_field_origin'] = coords
 
     if copy:
-        return adata
+        return adata_s
 
 
 def _hexbin_make(
