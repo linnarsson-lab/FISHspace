@@ -5,8 +5,7 @@ import numpy as np
 from sklearn.neighbors import NearestNeighbors
 from scipy.stats import norm
 
-
-def plot_spatialtrajectory(
+def spatialtrajectory(
     adata,
     plot_method:str = 'stream',
     scale:str = 1.0,
@@ -19,12 +18,18 @@ def plot_spatialtrajectory(
     stream_cutoff_perc:float = 5,
     stream_linewidth:float = 1,
     stream_density:float = 1.0,
+    normalize_v:bool = False,
+    normalize_v_quantile:float = 0.95,
     ax = None,
     filename=None,
     ):
 
     X = adata.uns['vector_field_origin']
     V = adata.uns['vector_field_delta']
+
+    if normalize_v:
+        V = V / np.quantile(np.linalg.norm(V, axis=1), normalize_v_quantile)
+
     ncell = X.shape[0]
 
     V_cell = V.copy()

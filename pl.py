@@ -4,6 +4,7 @@ from .plotting.polygons import *
 from .plotting.umap import *
 from .plotting.neighbourhoodplot import *
 from .plotting import trajectory
+from .plotting.trajectory import *
 from .plotting.cluster_plot import *
 from .plotting.cell_communication import plot_cell_communication
 from .plotting.pseudotime_pl_utils import pseudotime_heatmap

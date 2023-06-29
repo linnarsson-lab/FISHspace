@@ -18,6 +18,8 @@ def vector_field(
     k:int=6, #
     spacing:int=100,
     min_count:int=2,
+    remove_negative_values=False,
+    direction:int = 1, # 1:outward, -1:inward
     copy:bool=False,
     ):
 
@@ -34,6 +36,12 @@ def vector_field(
         index=adata_s.obs[cluster_key].cat.categories, 
         columns=adata_s.obs[cluster_key].cat.categories,
         )
+    if remove_negative_values:
+        NN_score[NN_score < 0] = 0
+
+    if direction == -1:
+        NN_score = NN_score.T
+         
     xy = adata_s.obsm['spatial']
     x = xy[:,0]
     y = xy[:,1]
@@ -51,7 +59,7 @@ def vector_field(
         else:
             dist, ind = tree.query(coord, k=k*7)
             ind = ind[dist < spacing*2]
-            vectors = normalize(np.array([coords[i] - coords[ind[0]] for i in ind]))[1:]
+            vectors = normalize(np.array([coords[ind[0]] - coords[i] for i in ind]))[1:]
             df_nn = df.iloc[:,ind]
             
             weights = []
