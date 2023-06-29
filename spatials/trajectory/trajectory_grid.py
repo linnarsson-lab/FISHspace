@@ -38,9 +38,6 @@ def vector_field(
         )
     if remove_negative_values:
         NN_score[NN_score < 0] = 0
-
-    if direction == -1:
-        NN_score = NN_score.T
          
     xy = adata_s.obsm['spatial']
     x = xy[:,0]
@@ -59,7 +56,12 @@ def vector_field(
         else:
             dist, ind = tree.query(coord, k=k*7)
             ind = ind[dist < spacing*2]
-            vectors = normalize(np.array([coords[ind[0]] - coords[i] for i in ind]))[1:]
+
+            if direction == 1:
+                vectors = normalize(np.array([coords[i] - coords[ind[0]] for i in ind]))[1:]
+            elif direction == -1:
+                vectors = normalize(np.array([coords[ind[0]] - coords[i] for i in ind]))[1:]
+
             df_nn = df.iloc[:,ind]
             
             weights = []
