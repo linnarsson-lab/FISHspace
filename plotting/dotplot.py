@@ -188,8 +188,8 @@ def dotplot(
     ax.set_axisbelow(True)
     ax.tick_params(length=0)
     
-    ax.set_xlim(-.05*figsize[0], len(df.columns))
-    ax.set_ylim(-.05*figsize[0], len(df.index))
+    ax.set_xlim(-.5*figsize[0], len(df.columns))
+    ax.set_ylim(-.5*figsize[0], len(df.index))
 		
     plt.xticks(range(df.shape[1]), df.columns , rotation=xtick_rotation, fontsize=10)
     plt.yticks(range(df.shape[0]), df.index, fontsize=10, rotation=ytick_rotation)
@@ -199,7 +199,7 @@ def dotplot(
         plt.savefig(savepath, dpi=300,transparent=True,bbox_inches='tight')
     plt.show()
       
-    return df 
+    return df, df_sizes
 
 def dotplot_bgval(
     adata,

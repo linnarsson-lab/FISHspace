@@ -131,6 +131,8 @@ def neighborhood_enrichment_from_pandas(
 	savepath=None,
 	mask_up=2.5,
 	mask_down=-2.5,
+	order_rows=None,
+	order_cols=None,
 
 	):
 
@@ -145,6 +147,11 @@ def neighborhood_enrichment_from_pandas(
 	Z = fastcluster.linkage(D, method=method,metric=metric, preserve_input=True)
 	Z = hc.optimal_leaf_ordering(Z, D, metric=metric)
 	ordering_a = df.index[hc.leaves_list(Z)]
+
+	if order_rows is not None:
+		ordering_a = order_rows
+	if order_cols is not None:
+		ordering_a = order_cols
 	df = df.loc[ordering_a][ordering_a]
 
 	# Getting the Upper Triangle of the co-relation matrix
@@ -187,7 +194,7 @@ def neighborhood_enrichment_from_pandas(
 	if save:
 		plt.savefig(savepath, dpi=300, transparent=True,bbox_inches='tight')
 	plt.show()
-
+	return ordering_a
 
 def co_ocurrance(
 	adata,

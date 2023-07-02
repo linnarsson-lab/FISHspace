@@ -59,6 +59,7 @@ def plot_polygons(
 		linewidth=0.05,
 		annotation_rotation:int=0,
 		annotation_text_offset:tuple=(-50,0),
+		dpi=300,
 		ax=None,
 		):
 
@@ -193,7 +194,7 @@ def plot_polygons(
 			if savepath is None:
 				savepath = os.path.join('figures','{}_zoom{}.svg'.format(sample, clusters))
 			transparent = True if facecolor == (1,1,1) else False
-			plt.savefig(savepath,dpi=300,format='svg', transparent=transparent,bbox_inches='tight')
+			plt.savefig(savepath, dpi=dpi, transparent=transparent,bbox_inches='tight')
 		
 		plt.show()
 
@@ -228,6 +229,7 @@ def plot_polygons_expression(
 		annotation_rotation:int=0,
 		annotation_text_offset:tuple=(-50,0),
 		ax=None,
+		dpi=300,
 		):
 
 	scale_factor = 1
@@ -304,6 +306,6 @@ def plot_polygons_expression(
 			if savepath is None:
 				savepath = os.path.join('figures','{}_zoom{}.svg'.format(sample, clusters))
 			transparent = True if facecolor == (1,1,1) else False
-			plt.savefig(savepath,dpi=300,format='svg', transparent=transparent,bbox_inches='tight')
+			plt.savefig(savepath,dpi=dpi,format='svg', transparent=transparent,bbox_inches='tight')
 		
 		plt.show()
