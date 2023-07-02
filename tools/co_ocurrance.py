@@ -137,7 +137,10 @@ def co_ocurrance_faster(
     import multiprocessing
     import math
 
-    adata_filter = adata[adata.X.sum(axis=1) > 20]
+        
+    if clusters is None:
+        clusters = np.unique(adata.obs[key])
+    adata_filter = adata[adata.X.sum(axis=1) > 10]
     adata_filter = adata_filter[adata_filter.obs[key].isin(clusters)]
     if adata_filter.shape[0] > 250000:
         logging.info('Subsmpling to 250000 cells')
@@ -145,9 +148,6 @@ def co_ocurrance_faster(
     ncores = multiprocessing.cpu_count()
     if type(max_distance) is int:
         interval = np.linspace(starting_distance, max_distance, num=steps)
-
-    if clusters is None:
-        clusters = np.unique(adata_filter.obs[key])
     
     area_correction = np.array(
          [1/(math.pi * i**2 - math.pi * (interval[n-1])**2) if n > 0 else 1/(math.pi * starting_distance**2) for n,i in enumerate(interval)], 
@@ -206,6 +206,54 @@ def co_ocurrance_faster(
         #print(results_permuted[c[0]])
 
     adata.uns['co_ocurrance'] = {'count':results, 'zscore':results_permuted}
+
+def neighbourhood_z(
+		adata,
+		key,
+        clusters=None,
+		max_distance=500,
+        starting_distance=2.5,
+        bootstrap:bool = False,
+
+	) -> None:
+    from joblib import Parallel, delayed
+    import multiprocessing
+    import math
+        
+    if clusters is None:
+        clusters = np.unique(adata.obs[key])
+    adata_filter = adata[adata.X.sum(axis=1) > 10]
+    adata_filter = adata_filter[adata_filter.obs[key].isin(clusters)]
+
+    ncores = multiprocessing.cpu_count()
+    
+    df = pd.DataFrame({'X':adata_filter.obs.X,'Y':adata_filter.obs.Y, key:adata_filter.obs[key]})
+    tree_dic = {}
+
+    for c in clusters:
+        df_c = df[df[key] == c]
+        centroids = np.array([df_c.X, df_c.Y]).T
+        tree_dic[c] = KDTree(centroids)
+
+
+    d_empty = pd.DataFrame(
+        np.zeros([len(clusters), len(clusters)]), 
+        index=clusters, 
+        columns=clusters
+    )
+
+    #@numba.jit(nopython=True)
+    for c in tqdm(product(clusters, repeat=2),position=0, leave=True):
+        tree1 = tree_dic[c[0]]
+        tree2 = tree_dic[c[1]]
+        res = tree1.count_neighbors(tree2, r=max_distance, cumulative=False)#.astype('float64')
+        res1 = tree1.count_neighbors(tree1, r=starting_distance, cumulative=False)#.astype('float64')
+        res = res - res1
+        #print(c[0], c[1], res)
+        
+        d_empty.loc[ c[0], c[1]] =  res
+
+    adata.uns['nhood_enrichment'] = {'count':d_empty, 'zscore':d_empty}
 
 def compute_n(tree1, tree2, area_correction, interval):
     res = tree1.count_neighbors(tree2, r=interval, cumulative=False).astype('float64')
