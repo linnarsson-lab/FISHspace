@@ -188,8 +188,10 @@ def dotplot(
     ax.set_axisbelow(True)
     ax.tick_params(length=0)
     
-    ax.set_xlim(-.5*figsize[0], len(df.columns))
-    ax.set_ylim(-.5*figsize[0], len(df.index))
+    #ax.set_xlim(-.5*figsize[0], len(df.columns))
+    #ax.set_ylim(-.5*figsize[0], len(df.index))
+    ax.set_xlim(-.5, len(df.columns)+0.5)
+    ax.set_ylim(-.5, len(df.index) +0.5)
 		
     plt.xticks(range(df.shape[1]), df.columns , rotation=xtick_rotation, fontsize=10)
     plt.yticks(range(df.shape[0]), df.index, fontsize=10, rotation=ytick_rotation)
@@ -330,8 +332,11 @@ def dotplot_bgval(
     ax.set_axisbelow(True)
     ax.tick_params(length=0)
     
-    ax.set_xlim(-.05*figsize[0], len(df.columns))
-    ax.set_ylim(-.05*figsize[0], len(df.index))
+    #ax.set_xlim(-.05*figsize[0], len(df.columns))
+    #ax.set_ylim(-.05*figsize[0], len(df.index))
+
+    ax.set_xlim(-.5, len(df.columns)+0.5)
+    ax.set_ylim(-.5, len(df.index) +0.5)
 		
     plt.xticks(range(df.shape[1]), df.columns , rotation=xtick_rotation, fontsize=10)
     plt.yticks(range(df.shape[0]), df.index, fontsize=10, rotation=ytick_rotation)
