@@ -40,12 +40,15 @@ def plot_polygons(
 		ylim:tuple = None, #= (5000, 7000)
 		cluster_key:str = 'CombinedNameMergeImmune',
 		grey_clusters:list = [],
+		gray_color:str = '#ececec',
 		annotate:bool = False, # Will write arrow and legend on top of one of each polygon clusters
 		annotation_loc:dict = {}, # Which iloc to use for annotation {cluster:iloc}
 		area_min_size:int = 25, # Minimum area size of polygons to plot
 		facecolor:tuple = (1,1,1), #background, defaults white
 		figsize:tuple = (10,10),
 		alpha:float = 0.75,
+		alpha_gray:float = 0.25,
+		linewidth_gray:float = 0.05,
 		fontsize:int = 8,
 		show_axis:bool=False,
 		save:bool=False,
@@ -71,8 +74,6 @@ def plot_polygons(
 
 	polygons = adata.obs[geometry_key]
 	ispoint = polygons.values[0].count('POINT')
-	
-	gray_color = '#ececec'
 	geometry = gpd.GeoSeries.from_wkt(polygons)
 
 	if image is not None:
@@ -106,6 +107,10 @@ def plot_polygons(
 			image = np.flipud(image)
 		if flipx:
 			image = np.fliplr(image)
+		if xlim is None:
+			xlim = (0, image.shape[1])
+		if ylim is None:
+			ylim = (0, image.shape[0])
 		ax1.imshow(image[ylim[0]:ylim[1], xlim[0]:xlim[1]])
 
 	if ispoint:
@@ -113,21 +118,21 @@ def plot_polygons(
 			color=gray_color,
 			markersize=markersize, 
 			edgecolor='black',
-			linewidth=linewidth,
+			linewidth=linewidth_gray,
 			ax=ax1,
 			rasterized=True,
 			facecolor=facecolor, 
-			alpha=0.25
+			alpha=alpha_gray,
 			)
 	else:
 		_ = gdf[gdf[cluster_key].isin(grey_clusters)].plot(
 			color=gray_color,
 			edgecolor='black',
-			linewidth=linewidth,
+			linewidth=linewidth_gray,
 			ax=ax1,
 			rasterized=True,
 			facecolor=facecolor, 
-			alpha=0.25
+			alpha=alpha_gray,
 			)
 		
 	for c in clusters:
@@ -206,6 +211,7 @@ def plot_polygons_expression(
 		cmap = 'magma',
 		bgval = 0, # background value for plotting expression
 		mquant = 0.99, # max quantile for plotting expression
+		plot_grays:bool = True,
 		palette:dict=None,
 		geometry_key:str = 'Polygons',
 		xlim:tuple = None, #= (11000, 13000)
@@ -217,6 +223,7 @@ def plot_polygons_expression(
 		facecolor:tuple = (1,1,1), #background, defaults white
 		figsize:tuple = (10,10),
 		alpha:float = 0.75,
+		alpha_gray:float = 0.75,
 		fontsize:int = 8,
 		show_axis:bool=False,
 		save:bool=False,
@@ -276,7 +283,8 @@ def plot_polygons_expression(
 			image = np.fliplr(image)
 		ax1.imshow(image[ylim[0]:ylim[1], xlim[0]:xlim[1]])
 
-	im_gray = gdf[gdf['Expression'] <= bgval ].plot(color=gray_color,edgecolor='black',linewidth=0.05,ax=ax1,rasterized=True,facecolor=facecolor, alpha=0.25)
+	if plot_grays:
+		im_gray = gdf[gdf['Expression'] <= bgval ].plot(color=gray_color,edgecolor='black',linewidth=0.05,ax=ax1,rasterized=True,facecolor=facecolor, alpha=alpha_gray)
 	gdf_col = gdf[gdf['Expression'] > bgval ]
 
 	order = np.argsort(gdf_col['Expression'])
@@ -309,3 +317,123 @@ def plot_polygons_expression(
 			plt.savefig(savepath,dpi=dpi,format='svg', transparent=transparent,bbox_inches='tight')
 		
 		plt.show()
+
+
+'''def polygons_gene_ratio(
+		adata:sc.AnnData,
+		sample:str,
+		geneA:list,
+		geneB:list,
+		clusters:list,
+		cluster_key:str = 'CombinedNameMerge',
+		cmap = 'coolwarm',
+		bgval = 0, # background value for plotting expression
+		mquant = 0.99, # max quantile for plotting expression
+		palette:dict=None,
+		geometry_key:str = 'Polygons',
+		xlim:tuple = None, #= (11000, 13000)
+		ylim:tuple = None, #= (5000, 7000)
+
+		area_min_size:int = 25, # Minimum area size of polygons to plot
+		facecolor:tuple = (1,1,1), #background, defaults white
+		figsize:tuple = (10,10),
+		alpha:float = 0.75,
+		alpha_gray:float = 0.75,
+		fontsize:int = 8,
+		show_axis:bool=False,
+		save:bool=False,
+		savepath:str = None,
+		image_downscale:int=5, # defaults to 5 because our HEs are 5x downsampled
+		show_scalebar:bool=True,
+		image:np.array=None,
+		flipy:bool=False,
+		flipx:bool=False,
+		annotation_rotation:int=0,
+		annotation_text_offset:tuple=(-50,0),
+		ax=None,
+		dpi=300,
+		):
+
+	scale_factor = 1
+	adata = adata[adata.obs['Sample'] == sample]
+	adata = adata[(adata.obs['Area'] > area_min_size), :]
+	adata = adata[adata.obs[cluster_key].isin(clusters)]
+
+	expressionA = adata[:,geneA].X.toarray()
+	expressionB = adata[:,geneB].X.toarray()
+
+	ratio = np.divide(expressionA, expressionB)
+
+	#expression = np.clip(expression, bgval, np.quantile(expression, mquant))
+	logging.info('First filter, {} cells left'.format(adata.shape[0]))
+
+	polygons = adata.obs[geometry_key]
+	gray_color = '#ececec'
+	geometry = gpd.GeoSeries.from_wkt(polygons)
+
+	if image is not None:
+		scale_factor = 0.27*image_downscale
+		geometry = geometry.affine_transform([1/scale_factor, 0, 0, 1/scale_factor, 0, 0])
+
+	gdf = gpd.GeoDataFrame(geometry=geometry,
+		data=
+			{
+				cluster_key:adata.obs[cluster_key],
+				'Expression': expression,
+				'Area':adata.obs['Area'],
+		}
+	)
+	if xlim is not None and ylim is not None:
+		logging.info('Selecting cells in zoom area')
+		gdf = gdf[gdf.loc[:,'geometry'].apply(lambda p: _inside(p, xlim=xlim, ylim=ylim))]
+		translated_geom = gdf.loc[:,'geometry'].translate(xoff=-xlim[0], yoff=-ylim[0])
+		gdf.loc[:,'geometry'] = translated_geom
+	logging.info('Zoom filter, {} cells left'.format(gdf.shape[0]))
+
+	#gdf_col = gdf[gdf[cluster_key].isin(clusters)]
+
+	if ax is None:
+		fig, ax1 = plt.subplots(figsize=figsize)
+	else:
+		ax1 = ax
+	ax1.set_facecolor(facecolor)
+	if image is not None:
+		if flipy:
+			image = np.flipud(image)
+		if flipx:
+			image = np.fliplr(image)
+		ax1.imshow(image[ylim[0]:ylim[1], xlim[0]:xlim[1]])
+
+	im_gray = gdf[gdf['Expression'] <= bgval ].plot(color=gray_color,edgecolor='black',linewidth=0.05,ax=ax1,rasterized=True,facecolor=facecolor, alpha=alpha_gray)
+	gdf_col = gdf[gdf['Expression'] > bgval ]
+
+	order = np.argsort(gdf_col['Expression'])
+	gdf_col = gdf_col.iloc[order]
+	last = bgval
+	im = gdf_col.plot(column='Expression', cmap=cmap, edgecolor='black',linewidth=0.05,ax=ax1,rasterized=True,facecolor=facecolor,alpha=alpha)
+
+	if show_scalebar:
+		scalebar = ScaleBar(
+			scale_factor,
+			units='um',
+			length_fraction=.1,
+			location='lower right'
+		) # 1 pixel = 0.2 meter
+		plt.gca().add_artist(scalebar)
+
+	plt.tight_layout()
+
+	if show_axis == False:
+		ax1.spines[['left','right', 'top','bottom']].set_visible(False)
+		ax1.set_xticks([])
+		ax1.set_yticks([])
+		#ax1.axis('off')
+	
+	if ax is None:
+		if save:
+			if savepath is None:
+				savepath = os.path.join('figures','{}_zoom{}.svg'.format(sample, clusters))
+			transparent = True if facecolor == (1,1,1) else False
+			plt.savefig(savepath,dpi=dpi,format='svg', transparent=transparent,bbox_inches='tight')
+		
+		plt.show()'''

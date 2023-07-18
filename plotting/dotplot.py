@@ -91,15 +91,22 @@ def dotplot(
 	normalize_totals=True,
 	totals=False,
 	minmax=True,
+    log=False,
+    scale=False,
     ):
     from sklearn.preprocessing import Normalizer, MinMaxScaler
     import scipy.cluster.hierarchy as hc
     from scipy.spatial.distance import pdist
     import fastcluster
     
+    adata = adata[:,markers]
     if normalize_totals:
         sc.pp.normalize_total(adata, target_sum=1e3)
-    adata = adata[:,markers]
+    if log:
+        sc.pp.log1p(adata)
+    if scale:
+        sc.pp.scale(adata)
+    
     
     if minmax:
         adatas = []
@@ -115,8 +122,8 @@ def dotplot(
     
     for ad in np.unique(adata.obs[cluster_key]):
         
-        #X = adata[adata.obs[cluster_key] == ad,markers].X.sum(axis=0)
-        X = adata[adata.obs[cluster_key] == ad,markers].X.mean(axis=0)
+        X = adata[adata.obs[cluster_key] == ad,markers].X.sum(axis=0)
+
         total_Cells.append(adata[adata.obs[cluster_key] == ad,].shape[0])
         S = (adata[adata.obs[cluster_key] == ad,markers].X > threshold).sum(axis=0)
         if totals:
@@ -140,7 +147,7 @@ def dotplot(
     df =  pd.DataFrame(data = X, index=np.unique(adata.obs[cluster_key]), columns=markers)
     df_sizes = pd.DataFrame(data=S*size_factor, index=np.unique(adata.obs[cluster_key]), columns=markers)
     
-    if totals == False:
+    if totals == False and row_order is None and col_order is None:
         D = pdist(df.values, metric=metric)
         Z = fastcluster.linkage(D, method=method,metric=metric, preserve_input=True)
         Z = hc.optimal_leaf_ordering(Z, D, metric=metric)
@@ -152,17 +159,16 @@ def dotplot(
         Z = hc.optimal_leaf_ordering(Z, D, metric=metric)
         ordering_samples = hc.leaves_list(Z)
         ordering_samples_str_columns = df.columns[ordering_samples]
-	
-    
-    if reverse_cols:
-        ordering_samples_str_columns = ordering_samples_str_columns[::-1]
-    if reverse_rows:
-        ordering_samples_str_rows = ordering_samples_str_rows[::-1]
     
     if row_order is not None:
         ordering_samples_str_rows = row_order
     if col_order is not None:
         ordering_samples_str_columns = col_order
+
+    if reverse_cols:
+        ordering_samples_str_columns = ordering_samples_str_columns[::-1]
+    if reverse_rows:
+        ordering_samples_str_rows = ordering_samples_str_rows[::-1]
 
     df = df.loc[ordering_samples_str_rows].loc[:,ordering_samples_str_columns]
     df_melt = df.melt(ignore_index=False)
@@ -277,6 +283,8 @@ def dotplot_bgval(
     S = df_sizes.values/df_sizes.sum(axis=0)[None,:] #/df_sizes.values.sum(axis=0)[None,:]
     df =  pd.DataFrame(data = X, index=np.unique(adata.obs[cluster_key]), columns=markers)
     df_sizes = pd.DataFrame(data=S*size_factor, index=np.unique(adata.obs[cluster_key]), columns=markers)
+    print('Index', df.index)
+    print('Cols', df.columns)
     
     if totals == False:
         try:
@@ -297,18 +305,19 @@ def dotplot_bgval(
         except:
             ordering_samples_str_columns = df.columns
 	
-    
-    if reverse_cols:
-        ordering_samples_str_columns = ordering_samples_str_columns[::-1]
-    if reverse_rows:
-        ordering_samples_str_rows = ordering_samples_str_rows[::-1]
-    
     if row_order is not None:
         ordering_samples_str_rows = row_order
     if col_order is not None:
         ordering_samples_str_columns = col_order
 
-    df = df.loc[ordering_samples_str_rows].loc[:,ordering_samples_str_columns]
+    if reverse_cols:
+        ordering_samples_str_columns = ordering_samples_str_columns[::-1]
+    if reverse_rows:
+        ordering_samples_str_rows = ordering_samples_str_rows[::-1]
+    
+
+    df = df.loc[ordering_samples_str_rows]
+    df = df.loc[:,ordering_samples_str_columns]
     df_melt = df.melt(ignore_index=False)
 
     xs, ys, values, s = [], [], [], []

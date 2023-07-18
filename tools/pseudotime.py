@@ -99,7 +99,7 @@ def pseudotime_genes(
         min_logfold_ = min_logfold
         counter = 0
         print('bin',i,)
-        while total_genes > 75:
+        while total_genes > 100:
             #print('bin',i,)
             b00l_0 = rank_result[f'{i}_pvals_adj']<min_pval
             #print(b00l_0.sum(),'pval')
@@ -116,7 +116,7 @@ def pseudotime_genes(
             counter += 1
             if counter > 100:  
                 break
-        if rank_result_thres.shape[0]>50:
+        if rank_result_thres.shape[0]>100:
             if i == (bins-1):
                 print(i)
                 print(rank_result_thres)

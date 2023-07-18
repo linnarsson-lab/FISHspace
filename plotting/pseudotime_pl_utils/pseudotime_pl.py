@@ -118,18 +118,24 @@ def pseudotime_heatmap(
             labelleft=True
             if highlight is not None: 
                 if gene in highlight:
-                    color = '#cf2f74'
+                    color = 'black'#cf2f74'
                     
             if skip=='skip':
-                if (gene_pos%2)!=0:
-                    ax.set_yticks([0.5])
-                    ax.set_yticklabels([gene], ha="right",size=fontsize,color=color)
+                #if (gene_pos%2)!=0:
+                #    ax.set_yticks([0.5])
+                #    ax.set_yticklabels([gene], ha="right",size=fontsize,color=color)
 #                     plt.text(-0.01, 1.2, gene, horizontalalignment='right', verticalalignment='top', \
 #                          transform=ax.transAxes, fontsize=fontsize, color=color)
-                else:
+                if gene not in highlight:
                     ax.set_yticks([])
                     ax.set_yticklabels([])
                     labelleft=False
+                else:
+                    ax.set_yticks([0.5])
+                    ax.set_yticklabels([gene], ha="right",size=fontsize,color=color)
+#                   plt.text(-0.01, 1.2, gene, horizontalalignment='right', verticalalignment='top', \
+#                          transform=ax.transAxes, fontsize=fontsize, color=color)
+
             elif skip=='all':
                 ax.set_yticks([])
                 ax.set_yticklabels([])
