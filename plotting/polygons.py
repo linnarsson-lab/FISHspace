@@ -80,12 +80,18 @@ def plot_polygons(
 		scale_factor = 0.27*image_downscale
 		geometry = geometry.affine_transform([1/scale_factor, 0, 0, 1/scale_factor, 0, 0])
 
+	if type(alpha) == str:
+		alpha = adata.obsm[alpha]
+	else:
+		alpha = np.ones(adata.shape[0])*alpha
+
 	gdf = gpd.GeoDataFrame(geometry=geometry,
 		data=
 			{
 				cluster_key:adata.obs[cluster_key],
 				'Area':adata.obs['Area'],
-				'color':[palette[p] for p in adata.obs[cluster_key]]
+				'color':[palette[p] for p in adata.obs[cluster_key]],
+				'alpha':alpha,
 		}
 	)
 	if xlim is not None and ylim is not None:
@@ -112,6 +118,7 @@ def plot_polygons(
 		if ylim is None:
 			ylim = (0, image.shape[0])
 		ax1.imshow(image[ylim[0]:ylim[1], xlim[0]:xlim[1]])
+	
 
 	if ispoint:
 		_ = gdf[gdf[cluster_key].isin(grey_clusters)].plot(
@@ -137,6 +144,8 @@ def plot_polygons(
 		
 	for c in clusters:
 		gdf_ = gdf_col[gdf_col[cluster_key] == c]
+		if type(alpha) == str:
+			alpha = gdf_.alpha.values
 		if ispoint:
 			im = gdf_.plot(
 				color= palette[c], 
