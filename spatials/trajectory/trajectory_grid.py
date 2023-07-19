@@ -158,16 +158,16 @@ def vector_alpha(
     V_grid /= np.maximum(1, w_sum)[:,None]
     grid_thresh *= np.percentile(w_sum, 99) / 100
     grid_pts, V_grid = grid_pts[w_sum > grid_thresh], V_grid[w_sum > grid_thresh]
-    print(grid_pts)
-    print(V_grid)
+    print(grid_pts.shape)
+    print(V_grid.shape)
 
     xy = adata_vf.obsm['spatial']
     x = xy[:,0]
     y = xy[:,1]
     coords = np.array([x,y]).T
 
-    origin_ = adata_vf.uns['vector_field_origin']
-    delta_ = adata_vf.uns['vector_field_delta']
+    origin_ = grid_pts
+    delta_ = V_grid
     dists = np.array([distance.cosine(o_,d_) for o_, d_ in zip(origin_, delta_)])
 
     alphas = []
