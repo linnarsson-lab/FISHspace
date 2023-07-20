@@ -107,7 +107,6 @@ def vector_alpha(
     grid_knn:str = None,
     grid_scale:float = 1,
     grid_thresh:float = 1.0,
-    grid_width:float = 0.005,
     ):
 
     adata_vf = vector_field(
@@ -168,7 +167,7 @@ def vector_alpha(
 
     origin_ = grid_pts
     delta_ = V_grid
-    dists = np.array([distance.cosine(o_,d_) for o_, d_ in zip(origin_, delta_)])
+    dists = np.array([distance.euclidean(o_,d_) for o_, d_ in zip(origin_, delta_)])
 
     alphas = []
     tree = KDTree(origin_)
