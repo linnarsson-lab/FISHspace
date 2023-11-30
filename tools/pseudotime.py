@@ -60,7 +60,15 @@ def pseudotime_genes(
 
     time_adata = adata[b00l,:] 
     cellid_bin_ =[]
-    edges = [int((x)*(time_adata.shape[0]/n_bins )) for x in range(n_bins+1)]
+
+    if type(n_bins) == int:
+        edges = [int((x)*(time_adata.shape[0]/n_bins )) for x in range(n_bins+1)]
+
+    elif type(n_bins) == list:
+        n_bins_list = n_bins
+        n_bins = len(n_bins) - 1
+        edges = [int((x)*(time_adata.shape[0]/n_bins )) for x in n_bins_list]
+
     for n in range(n_bins):
         cellid_bin = time_adata.obs.iloc[np.argsort(time_adata.obs['latent_time'].values)][edges[n]:edges[n+1]].index
         cellid_bin_.append(cellid_bin)
@@ -81,7 +89,7 @@ def pseudotime_genes(
         #sc.pp.log1p(sub_adata)
         #del sub_adata.raw
 
-        sc.tl.rank_genes_groups(sub_adata, 'lineage_Clusters',use_raw=False)
+        sc.tl.rank_genes_groups(sub_adata, 'lineage_Clusters', use_raw=False)
 
         result = sub_adata.uns['rank_genes_groups']
         groups = result['names'].dtype.names

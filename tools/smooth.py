@@ -65,3 +65,38 @@ class SmoothNN:
 		elif len(expression_smooth.shape) == 2:
 			self.adata.layers['smooth'] = expression_smooth#[:,:]
 		self.adata.obs['MergedClusters'] = clusters
+
+def neighbors(
+		adata, 
+		feature_key, 
+		batch_key = 'Sample',
+		max_distance=20,
+		filter_clusters=None,
+		save: bool = False
+		) -> None:
+
+	if filter_clusters is not None:
+		adata = adata[adata.obs[feature_key].isin(filter_clusters),:]
+		
+	clusters = adata.obs[feature_key]
+	unique_clusters = clusters.cat.categories
+	ClusterID = np.unique(clusters)
+	sample = adata.obs[batch_key]#[subsample]
+	unique_samples = np.unique(sample)
+
+	adatas = [adata[adata.obs[batch_key] == s, :] for s in unique_samples]
+	adatas2 = []
+	for ad in tqdm(adatas):
+		x,y = ad.obs['X'].values, ad.obs['Y'].values
+		centroids = np.array([x,y]).T
+		tree = KDTree(centroids)
+		clusters = ad.obs[feature_key].values
+		dst, nghs= tree.query(centroids, distance_upper_bound=max_distance, k=50,workers=-1,p=2)
+		nghs = [np.array(clusters[n[n < clusters.shape[0]]] )for n in nghs]
+		nghs = np.array([np.array([(n== x).sum() for x in unique_clusters]) for n in nghs])
+		ad = ad[nghs.sum(axis=1) > 3]
+		ad.obsm['nghs'] = nghs[nghs.sum(axis=1) > 3,:]
+		adatas2.append(ad)
+		
+	adata = adatas2[0].concatenate(*adatas2[1:])
+	return adata

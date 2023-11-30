@@ -221,19 +221,15 @@ def plot_polygons_expression(
 		bgval = 0, # background value for plotting expression
 		mquant = 0.99, # max quantile for plotting expression
 		plot_grays:bool = True,
-		palette:dict=None,
 		geometry_key:str = 'Polygons',
 		xlim:tuple = None, #= (11000, 13000)
 		ylim:tuple = None, #= (5000, 7000)
 		cluster_key:str = 'CombinedNameMergeImmune',
-		annotate:bool = False, # Will write arrow and legend on top of one of each polygon clusters
-		annotation_loc:dict = {}, # Which iloc to use for annotation {cluster:iloc}
 		area_min_size:int = 25, # Minimum area size of polygons to plot
 		facecolor:tuple = (1,1,1), #background, defaults white
 		figsize:tuple = (10,10),
 		alpha:float = 0.75,
 		alpha_gray:float = 0.75,
-		fontsize:int = 8,
 		show_axis:bool=False,
 		save:bool=False,
 		savepath:str = None,
@@ -242,8 +238,6 @@ def plot_polygons_expression(
 		image:np.array=None,
 		flipy:bool=False,
 		flipx:bool=False,
-		annotation_rotation:int=0,
-		annotation_text_offset:tuple=(-50,0),
 		ax=None,
 		dpi=300,
 		):
@@ -328,27 +322,26 @@ def plot_polygons_expression(
 		plt.show()
 
 
-'''def polygons_gene_ratio(
+def plot_polygons_obsm(
 		adata:sc.AnnData,
 		sample:str,
-		geneA:list,
-		geneB:list,
-		clusters:list,
+		key:str,
+		clusters:list=None,
+		grey_clusters:list=[],
 		cluster_key:str = 'CombinedNameMerge',
-		cmap = 'coolwarm',
-		bgval = 0, # background value for plotting expression
-		mquant = 0.99, # max quantile for plotting expression
-		palette:dict=None,
+		cmap = 'magma',
+		normalize_values:bool = False,
+		bgval_quant = 0.25, # background value for plotting expression
+		normalize_values_quant = 0.99, # max quantile for plotting expression
+		plot_grays:bool = True,
 		geometry_key:str = 'Polygons',
 		xlim:tuple = None, #= (11000, 13000)
 		ylim:tuple = None, #= (5000, 7000)
-
 		area_min_size:int = 25, # Minimum area size of polygons to plot
 		facecolor:tuple = (1,1,1), #background, defaults white
 		figsize:tuple = (10,10),
 		alpha:float = 0.75,
 		alpha_gray:float = 0.75,
-		fontsize:int = 8,
 		show_axis:bool=False,
 		save:bool=False,
 		savepath:str = None,
@@ -357,8 +350,6 @@ def plot_polygons_expression(
 		image:np.array=None,
 		flipy:bool=False,
 		flipx:bool=False,
-		annotation_rotation:int=0,
-		annotation_text_offset:tuple=(-50,0),
 		ax=None,
 		dpi=300,
 		):
@@ -366,13 +357,14 @@ def plot_polygons_expression(
 	scale_factor = 1
 	adata = adata[adata.obs['Sample'] == sample]
 	adata = adata[(adata.obs['Area'] > area_min_size), :]
-	adata = adata[adata.obs[cluster_key].isin(clusters)]
+	adata = adata[adata.obs[cluster_key].isin(clusters + grey_clusters), :]
+	expression = adata.obsm[key]
 
-	expressionA = adata[:,geneA].X.toarray()
-	expressionB = adata[:,geneB].X.toarray()
-
-	ratio = np.divide(expressionA, expressionB)
-
+	if normalize_values:
+		expression = expression / np.quantile(np.linalg.norm(expression, axis=0), normalize_values_quant)
+	bgval = np.quantile(expression, bgval_quant)
+	print(expression.max(), expression.min())
+	
 	#expression = np.clip(expression, bgval, np.quantile(expression, mquant))
 	logging.info('First filter, {} cells left'.format(adata.shape[0]))
 
@@ -412,13 +404,17 @@ def plot_polygons_expression(
 		if flipx:
 			image = np.fliplr(image)
 		ax1.imshow(image[ylim[0]:ylim[1], xlim[0]:xlim[1]])
+	
+	gdf_col = gdf[gdf[cluster_key].isin(clusters)]
+	if plot_grays:
+		gdf_gray = gdf[gdf[cluster_key].isin(grey_clusters)]
+		gdf_gray.plot(color=gray_color,edgecolor='black',linewidth=0.05,ax=ax1,rasterized=True,facecolor=facecolor, alpha=alpha_gray)
+		gdf_col[gdf_col['Expression'] <= bgval ].plot(color=gray_color,edgecolor='black',linewidth=0.05,ax=ax1,rasterized=True,facecolor=facecolor, alpha=alpha_gray)
 
-	im_gray = gdf[gdf['Expression'] <= bgval ].plot(color=gray_color,edgecolor='black',linewidth=0.05,ax=ax1,rasterized=True,facecolor=facecolor, alpha=alpha_gray)
 	gdf_col = gdf[gdf['Expression'] > bgval ]
 
 	order = np.argsort(gdf_col['Expression'])
 	gdf_col = gdf_col.iloc[order]
-	last = bgval
 	im = gdf_col.plot(column='Expression', cmap=cmap, edgecolor='black',linewidth=0.05,ax=ax1,rasterized=True,facecolor=facecolor,alpha=alpha)
 
 	if show_scalebar:
@@ -445,4 +441,5 @@ def plot_polygons_expression(
 			transparent = True if facecolor == (1,1,1) else False
 			plt.savefig(savepath,dpi=dpi,format='svg', transparent=transparent,bbox_inches='tight')
 		
-		plt.show()'''
+		plt.show()
+

@@ -12,4 +12,4 @@ from .compare_transitions import compare_transitions
 
 from .set_root import set_root
 from .shortest_path_spatial_PAGA import shortest_path_spatial_PAGA
-from .trajectory_grid import vector_field, vector_alpha
+from .trajectory_grid import vector_field, vector_alpha, vector_alpha_cells

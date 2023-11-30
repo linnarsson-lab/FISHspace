@@ -11,6 +11,7 @@ from sklearn.preprocessing import normalize
 from scipy.spatial import distance
 from sklearn.neighbors import NearestNeighbors
 from scipy.stats import norm
+from tqdm import tqdm
 
 
 def vector_field(
@@ -69,9 +70,9 @@ def vector_field(
             df_nn = df.iloc[:,ind]
             
             weights = []
-            for i in range(1,df_nn.shape[1]):
-                a = NN_score.values@df_nn.iloc[:,0].values
-                b = NN_score.values@df_nn.iloc[:,i].values
+            for i2 in range(1,df_nn.shape[1]):
+                a = NN_score.values @ df_nn.iloc[:,0].values
+                b = NN_score.values @ df_nn.iloc[:,i2].values
                 v = np.dot(a,b)
                 weights.append(v)
             weights = np.array(weights)
@@ -83,9 +84,179 @@ def vector_field(
     #vector_field = normalize(vector_field) * spacing
     adata_s.uns['vector_field_delta'] = vector_field
     adata_s.uns['vector_field_origin'] = coords
+    if copy:
+        return adata_s
+
+
+def vector_field_cells(
+    adata,
+    sample:str,
+    cluster_key:str = 'CombinedNameMerge',
+    clusters:list = None,
+    k:int=6, #
+    remove_negative_values=False,
+    direction:int = 1, # 1:outward, -1:inward
+    copy:bool=False,
+    min_z = 0
+    ):
+
+    adata_s = adata[adata.obs.Sample == sample]
+
+    if clusters is not None:
+        adata_s = adata_s[adata_s.obs[cluster_key].isin(clusters)]
+
+    sq.gr.spatial_neighbors(adata_s, coord_type="generic", n_neighs=10,delaunay=True,radius=(2.5,50))
+    sq.gr.nhood_enrichment(adata_s, cluster_key=cluster_key)
+
+    NN_score = pd.DataFrame(
+        data=adata_s.uns[f'{cluster_key}_nhood_enrichment']['zscore'], 
+        index=adata_s.obs[cluster_key].cat.categories, 
+        columns=adata_s.obs[cluster_key].cat.categories,
+        )
+    if remove_negative_values:
+        NN_score[NN_score < min_z] = 0
+    #print(NN_score.head())
+    #print(NN_score.columns, NN_score.index)
+         
+    xy = adata_s.obsm['spatial']
+    x = xy[:,0]
+    y = xy[:,1]
+    c = adata_s.obs[cluster_key]
+
+    coords = np.array([x,y]).T
+    tree = KDTree(coords)
+    #get the nearest neighbors
+    vector_field = []
+    for i, coord in tqdm(enumerate(coords)):
+        dist, ind = tree.query(coord, k=k)
+        ind = ind[dist < 250] # remove cells that are too far away
+        if len(ind) < k/2:
+            vector_field.append(np.array([0,0]))
+        else:
+            dist, ind = tree.query(coord, k=k)
+            ind = ind[dist < 250]
+
+            if direction == 1:
+                vectors = normalize(np.array([coords[i] - coords[ind[0]] for i in ind]))[1:]
+            elif direction == -1:
+                vectors = normalize(np.array([coords[ind[0]] - coords[i] for i in ind]))[1:]
+
+            class_nn = c[ind]
+            #print(class_nn)
+            
+            weights = []
+            for i2 in range(1,class_nn.shape[0]):
+                #print(i2)
+                #print(c[i])
+                #print(class_nn[i2])
+                
+                v = NN_score.loc[c[i], :][class_nn[i2]]
+                #v = v
+                #v = np.dot(a,b)
+                weights.append(v)
+            weights = np.array(weights)
+            vectors = 1/(vectors + .1) * np.array(weights)[:,None]
+            vector = vectors.sum(axis=0)
+            vector_field.append(vector)
+
+    vector_field = np.array(vector_field)
+    #vector_field = normalize(vector_field) * spacing
+    adata_s.uns['vector_field_delta'] = vector_field
+    adata_s.uns['vector_field_origin'] = coords
 
     if copy:
         return adata_s
+    
+    
+def vector_alpha_cells(
+    adata,
+    sample:str,
+    cluster_key:str = 'CombinedNameMerge',
+    clusters:list = None,
+    alpha_nn = 1,
+    k:int=6, #
+    remove_negative_values=False,
+    min_z = 0,
+    direction:int = 1, # 1:outward, -1:inward
+    copy:bool=False,
+    normalize_v:bool = False,
+    normalize_v_quantile:float = 0.95,
+    scale:str = 1.0,
+    grid_density:str = 1,
+    grid_knn:str = None,
+    grid_scale:float = 1,
+    grid_thresh:float = 1.0,
+    ):
+
+    adata_vf = vector_field_cells(
+        adata,
+        sample=sample,
+        cluster_key=cluster_key,
+        clusters=clusters,
+        k=k, #
+        remove_negative_values=remove_negative_values,
+        min_z = min_z,
+        direction=direction,
+        copy=copy,
+    )
+
+    X = adata_vf.uns['vector_field_origin']
+    V = adata_vf.uns['vector_field_delta']
+
+    if normalize_v:
+        V = V / np.quantile(np.linalg.norm(V, axis=1), normalize_v_quantile)
+
+    ncell = X.shape[0]
+    V_cell = V.copy()
+    V_cell_sum = np.sum(V_cell, axis=1)
+    V_cell[np.where(V_cell_sum==0)[0],:] = np.nan
+
+    # Get a rectangular grid
+    xl, xr = np.min(X[:,0]), np.max(X[:,0])
+    epsilon = 0.02*(xr-xl); xl -= epsilon; xr += epsilon
+    yl, yr = np.min(X[:,1]), np.max(X[:,1])
+    epsilon = 0.02*(yr-yl); yl -= epsilon; yr += epsilon
+    ngrid_x = int(50 * grid_density)
+    gridsize = (xr-xl) / float(ngrid_x)
+    ngrid_y = int((yr-yl)/gridsize)
+    meshgrid = np.meshgrid(np.linspace(xl,xr,ngrid_x), np.linspace(yl,yr,ngrid_y))
+    grid_pts = np.concatenate((meshgrid[0].reshape(-1,1), meshgrid[1].reshape(-1,1)), axis=1)
+
+    if grid_knn is None:
+        grid_knn = int( X.shape[0] / 50 )
+    nn_mdl = NearestNeighbors()
+    nn_mdl.fit(X)
+    dis, nbs = nn_mdl.kneighbors(grid_pts, n_neighbors=grid_knn)
+    w = norm.pdf(x=dis, scale=gridsize * grid_scale)
+    w_sum = w.sum(axis=1)
+
+    V_grid = (V[nbs] * w[:,:,None]).sum(axis=1)
+    V_grid /= np.maximum(1, w_sum)[:,None]
+    grid_thresh *= np.percentile(w_sum, 99) / 100
+    grid_pts, V_grid = grid_pts[w_sum > grid_thresh], V_grid[w_sum > grid_thresh]
+    print(grid_pts.shape)
+    print(V_grid.shape)
+
+    xy = adata_vf.obsm['spatial']
+    x = xy[:,0]
+    y = xy[:,1]
+    coords = np.array([x,y]).T
+
+    origin_ = grid_pts
+    delta_ = V_grid
+    dists = np.array([distance.euclidean(o_,d_) for o_, d_ in zip(origin_, delta_)])
+
+    alphas = []
+    tree = KDTree(origin_)
+    for cell_ in coords:
+        nn = tree.query(cell_, k=alpha_nn)
+        alphas.append(dists[nn[1]].mean())
+
+    alphas = np.array(alphas)
+    alphas = (alphas -alphas.min()) / (alphas.max() - alphas.min())
+    adata_vf.obsm['alpha'] = alphas
+    return adata_vf
+
     
 def vector_alpha(
     adata,
