@@ -5,6 +5,7 @@ import logging
 
 def preprocess(
     adata,
+    batch_key='Sample',
     normalize_mode='l2', #Choose between 'total'/'scanpy'/'l1 or 'l2', None
     log=True,
     batch_correction=True,
@@ -28,10 +29,10 @@ def preprocess(
         sc.pp.log1p(adata)
     
     if batch_correction and scaling:    
-        logging.info('Batch correction mode on. This will force minmax scaling per sample to  remove batch effects.')
+        logging.info('Batch correction mode on. This will force minmax scaling per sample to remove batch effects.')
         adatas = []
-        for s in np.unique(adata.obs.Sample):
-            ad = adata[adata.obs.Sample == s,]#.X.mean(axis=0)
+        for s in np.unique(adata.obs[batch_key]):
+            ad = adata[adata.obs[batch_key] == s,]#.X.mean(axis=0)
             ad.X = MinMaxScaler().fit_transform(ad.X)
             adatas.append(ad)
         adata = adata[0].concatenate(*adatas[1:])
