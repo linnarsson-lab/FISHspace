@@ -2,5 +2,5 @@
 
 https://github.com/BiomedicalMachineLearning/stLearn
 
-We readaped stlearn to our needs and added our FISHscale package for handling
-FISH data.
+We readaped stlearn to our needs and added our [FISHscale package](https://github.com/linnarsson-lab/FISHscale) for handling FISH data.  
+To set up FISHspace, please refer to the [requirements.txt](https://github.com/linnarsson-lab/FISHspace/blob/master/requirements.txt) and [environment.yml](https://github.com/linnarsson-lab/FISHspace/blob/master/environment.yml) files.
